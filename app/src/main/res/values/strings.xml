@@ -1,3 +1,10 @@
 <resources>
     <string name="app_name">UPH 24SI3</string>
+    <string-array name="jurusan_array">
+        <item>PILIH Jurusan</item>
+        <item>Sistem Informasi</item>
+        <item>Akuntansi</item>
+        <item>Manajemen</item>
+        <item>Hospitality</item>
+    </string-array>
 </resources>

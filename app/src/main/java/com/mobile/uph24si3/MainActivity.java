@@ -1,88 +1,143 @@
 package com.mobile.uph24si3;
 
+import android.app.DatePickerDialog;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.net.Uri;
 import android.os.Bundle;
-import android.util.Log;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.TextView;
+import android.widget.ImageView;
 import android.widget.Toast;
+
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 
-import androidx.appcompat.app.AppCompatActivity;
+import java.util.Calendar;
 
 public class MainActivity extends AppCompatActivity {
 
-    private EditText etAngka1, etAngka2;
-    private TextView tvHasil;
-    private Button btnTambah, btnKurang, btnKali, btnBagi;
+    private ImageView ivProfile;
+    private Button btnPilihFoto, btnSimpan;
+    private EditText etNamaLengkap, etTempatLahir, etTanggalLahir, etHobi, etBio;
+
+    private Uri imageUri;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        super.setContentView(R.layout.activity_main);
 
-        // Hubungkan komponen XML ke Java
-        etAngka1 = findViewById(R.id.etAngka1);
-        etAngka2 = findViewById(R.id.etAngka2);
+        // Initialize views
+        ivProfile = findViewById(R.id.ivProfile);
+        btnPilihFoto = findViewById(R.id.btnPilihFoto);
+        btnSimpan = findViewById(R.id.btnSimpan);
+        etNamaLengkap = findViewById(R.id.etNamaLengkap);
+        etTempatLahir = findViewById(R.id.etTempatLahir);
+        etTanggalLahir = findViewById(R.id.etTanggalLahir);
+        etHobi = findViewById(R.id.etHobi);
+        etBio = findViewById(R.id.etBio);
 
-        tvHasil = findViewById(R.id.tvHasil);
+        loadExistingData();
 
-        btnTambah = findViewById(R.id.btnTambah);
-        btnKurang = findViewById(R.id.btnKurang);
-        btnKali = findViewById(R.id.btnKali);
-        btnBagi = findViewById(R.id.btnBagi);
+        // Date Picker
+        etTanggalLahir.setOnClickListener(v -> showDatePicker());
 
-        // Tombol tambah
-        btnTambah.setOnClickListener(v -> hitung("+"));
+        // Select Photo
+        ActivityResultLauncher<Intent> pickImageLauncher = registerForActivityResult(
+                new ActivityResultContracts.StartActivityForResult(),
+                result -> {
+                    if (result.getResultCode() == RESULT_OK && result.getData() != null) {
+                        imageUri = result.getData().getData();
+                        
+                        // Menambahkan persistable permission agar URI tetap bisa diakses setelah app restart
+                        try {
+                            getContentResolver().takePersistableUriPermission(imageUri, Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                        } catch (Exception e) {
+                            // Beberapa provider mungkin tidak mendukung persistable permission
+                        }
+                        
+                        ivProfile.setImageURI(imageUri);
+                    }
+                }
+        );
 
-        // Tombol kurang
-        btnKurang.setOnClickListener(v -> hitung("-"));
+        btnPilihFoto.setOnClickListener(v -> {
+            // Menggunakan ACTION_OPEN_DOCUMENT agar bisa menggunakan takePersistableUriPermission
+            Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+            intent.addCategory(Intent.CATEGORY_OPENABLE);
+            intent.setType("image/*");
+            pickImageLauncher.launch(intent);
+        });
 
-        // Tombol kali
-        btnKali.setOnClickListener(v -> hitung("*"));
-
-        // Tombol bagi
-        btnBagi.setOnClickListener(v -> hitung("/"));
+        // Simpan button
+        btnSimpan.setOnClickListener(v -> {
+            if (validateInputs()) {
+                saveData();
+                Toast.makeText(this, "Profile Berhasil Diupdate", Toast.LENGTH_SHORT).show();
+                finish(); // Langsung kembali ke Dashboard
+            } else {
+                Toast.makeText(this, "Mohon lengkapi semua data profile!", Toast.LENGTH_LONG).show();
+            }
+        });
     }
 
-    private void hitung(String operator) {
+    private void loadExistingData() {
+        SharedPreferences sharedPreferences = getSharedPreferences("ProfileData", MODE_PRIVATE);
+        etNamaLengkap.setText(sharedPreferences.getString("NAMA", ""));
+        etTempatLahir.setText(sharedPreferences.getString("TEMPAT", ""));
+        etTanggalLahir.setText(sharedPreferences.getString("TANGGAL", ""));
+        etHobi.setText(sharedPreferences.getString("HOBI", ""));
+        etBio.setText(sharedPreferences.getString("BIO", ""));
 
-        String angka1Str = etAngka1.getText().toString().trim();
-        String angka2Str = etAngka2.getText().toString().trim();
-
-        // Validasi input kosong
-        if (angka1Str.isEmpty() || angka2Str.isEmpty()) {
-            Toast.makeText(this, "Masukkan kedua angka!", Toast.LENGTH_SHORT).show();
-            return;
+        String imageUriStr = sharedPreferences.getString("IMAGE_URI", null);
+        if (imageUriStr != null) {
+            try {
+                imageUri = Uri.parse(imageUriStr);
+                ivProfile.setImageURI(imageUri);
+            } catch (Exception e) {
+                ivProfile.setImageResource(R.drawable.ic_launcher_foreground);
+            }
         }
+    }
 
-        double angka1 = Double.parseDouble(angka1Str);
-        double angka2 = Double.parseDouble(angka2Str);
-
-        double hasil = 0;
-
-        switch (operator) {
-            case "+":
-                hasil = angka1 + angka2;
-                break;
-
-            case "-":
-                hasil = angka1 - angka2;
-                break;
-
-            case "*":
-                hasil = angka1 * angka2;
-                break;
-
-            case "/":
-                if (angka2 == 0) {
-                    Toast.makeText(this, "Tidak bisa dibagi dengan nol!", Toast.LENGTH_SHORT).show();
-                    return;
-                }
-                hasil = angka1 / angka2;
-                break;
+    private void saveData() {
+        SharedPreferences sharedPreferences = getSharedPreferences("ProfileData", MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        
+        editor.putString("NAMA", etNamaLengkap.getText().toString());
+        editor.putString("TEMPAT", etTempatLahir.getText().toString());
+        editor.putString("TANGGAL", etTanggalLahir.getText().toString());
+        editor.putString("HOBI", etHobi.getText().toString());
+        editor.putString("BIO", etBio.getText().toString());
+        
+        if (imageUri != null) {
+            editor.putString("IMAGE_URI", imageUri.toString());
         }
+        
+        editor.apply();
+    }
 
-        tvHasil.setText("Hasil: " + hasil);
+    private void showDatePicker() {
+        final Calendar c = Calendar.getInstance();
+        int year = c.get(Calendar.YEAR);
+        int month = c.get(Calendar.MONTH);
+        int day = c.get(Calendar.DAY_OF_MONTH);
+
+        DatePickerDialog datePickerDialog = new DatePickerDialog(this,
+                (view, year1, monthOfYear, dayOfMonth) -> etTanggalLahir.setText(dayOfMonth + "/" + (monthOfYear + 1) + "/" + year1),
+                year, month, day);
+        datePickerDialog.show();
+    }
+
+    private boolean validateInputs() {
+        String nama = etNamaLengkap.getText().toString().trim();
+        String tempat = etTempatLahir.getText().toString().trim();
+        String tanggal = etTanggalLahir.getText().toString().trim();
+        String hobi = etHobi.getText().toString().trim();
+        String bio = etBio.getText().toString().trim();
+
+        return !nama.isEmpty() && !tempat.isEmpty() && !tanggal.isEmpty() && !hobi.isEmpty() && !bio.isEmpty();
     }
 }

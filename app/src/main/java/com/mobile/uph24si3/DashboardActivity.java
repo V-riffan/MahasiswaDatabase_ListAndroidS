@@ -14,19 +14,20 @@ import androidx.appcompat.app.AppCompatActivity;
 public class DashboardActivity extends AppCompatActivity {
 
     private ImageView ivDashProfile;
-    private TextView tvDashNama, tvDashTTL, tvDashGender, tvDashJurusan, tvDashStatus;
+    private TextView tvWelcome, tvDashNama, tvDashUsername, tvDashTTL, tvDashHobi, tvDashBio;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_dashboard);
+        super.setContentView(R.layout.activity_dashboard);
 
         ivDashProfile = findViewById(R.id.ivDashProfile);
+        tvWelcome = findViewById(R.id.tvWelcome);
         tvDashNama = findViewById(R.id.tvDashNama);
+        tvDashUsername = findViewById(R.id.tvDashUsername);
         tvDashTTL = findViewById(R.id.tvDashTTL);
-        tvDashGender = findViewById(R.id.tvDashGender);
-        tvDashJurusan = findViewById(R.id.tvDashJurusan);
-        tvDashStatus = findViewById(R.id.tvDashStatus);
+        tvDashHobi = findViewById(R.id.tvDashHobi);
+        tvDashBio = findViewById(R.id.tvDashBio);
 
         loadProfileData();
     }
@@ -35,21 +36,27 @@ public class DashboardActivity extends AppCompatActivity {
         SharedPreferences sharedPreferences = getSharedPreferences("ProfileData", MODE_PRIVATE);
         
         String nama = sharedPreferences.getString("NAMA", "-");
+        String username = sharedPreferences.getString("USERNAME", "admin");
         String tempat = sharedPreferences.getString("TEMPAT", "-");
         String tanggal = sharedPreferences.getString("TANGGAL", "-");
-        String gender = sharedPreferences.getString("GENDER", "-");
-        String jurusan = sharedPreferences.getString("JURUSAN", "-");
-        String status = sharedPreferences.getString("STATUS", "-");
+        String hobi = sharedPreferences.getString("HOBI", "-");
+        String bio = sharedPreferences.getString("BIO", "-");
         String imageUriStr = sharedPreferences.getString("IMAGE_URI", null);
 
-        tvDashNama.setText("Nama: " + nama);
-        tvDashTTL.setText("TTL: " + tempat + ", " + tanggal);
-        tvDashGender.setText("Jenis Kelamin: " + gender);
-        tvDashJurusan.setText("Jurusan: " + jurusan);
-        tvDashStatus.setText("Status: " + status);
+        tvWelcome.setText("Welcome, " + nama);
+        tvDashNama.setText("Nama Lengkap: " + nama);
+        tvDashUsername.setText("Username: " + username);
+        tvDashTTL.setText("Tempat, Tgl Lahir: " + tempat + ", " + tanggal);
+        tvDashHobi.setText("Hobi: " + hobi);
+        tvDashBio.setText(bio);
 
         if (imageUriStr != null) {
-            ivDashProfile.setImageURI(Uri.parse(imageUriStr));
+            try {
+                ivDashProfile.setImageURI(Uri.parse(imageUriStr));
+            } catch (Exception e) {
+                // Jika terjadi error (misal: permission), gunakan gambar default
+                ivDashProfile.setImageResource(R.drawable.ic_launcher_foreground);
+            }
         }
     }
 
@@ -80,6 +87,6 @@ public class DashboardActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        loadProfileData(); // Refresh data when returning from Edit Profile
+        loadProfileData();
     }
 }
