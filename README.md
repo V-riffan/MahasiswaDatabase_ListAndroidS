@@ -1,4 +1,4 @@
-# UPH 24SI3 - Student Management System (Aplikasi Manajemen Mahasiswa)
+Student Management System (Aplikasi Manajemen Mahasiswa)
 
 Aplikasi Android yang dirancang untuk mengelola data mahasiswa secara efisien menggunakan database lokal SQLite. Aplikasi ini mendukung operasi CRUD lengkap (Create, Read, Update, Delete) dengan antarmuka yang intuitif dan responsif.
 
